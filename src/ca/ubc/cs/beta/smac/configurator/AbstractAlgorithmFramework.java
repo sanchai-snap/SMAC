@@ -12,7 +12,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -553,6 +560,7 @@ public class AbstractAlgorithmFramework {
 				try{
 					while(!have_to_stop(iteration+1))
 					{
+						log.info("After check have to stop");
 						shouldWriteStateOnCrash.set(true);
 						if(shouldSave()) saveState();
 						
@@ -742,29 +750,85 @@ public class AbstractAlgorithmFramework {
 	 * @param challengers - List of challengers we should check against
 	 * @param timeBound  - Amount of time we are allowed to run against (seconds)
 	 */
-	private void intensify(List<ParameterConfiguration> challengers, double timeBound) 
+	private void intensify(final List<ParameterConfiguration> challengers, double timeBound) 
 	{
 
-		double initialTime = runHistory.getTotalRunCost();
+		final long initialTime = (long)runHistory.getTotalRunCost();
+		final long timeLimit = (long) timeBound;
 		log.debug("Calling intensify with {} challenger(s)", challengers.size());
-		for(int i=0; i < challengers.size(); i++)
-		{
-			double timeUsed = runHistory.getTotalRunCost() - initialTime;
-			if( timeUsed > timeBound && i > 1)
-			{
-				log.debug("Out of time for intensification timeBound: {} (s); used: {}  (s)", timeBound, timeUsed );
-				break;
-			} else
-			{
+		final AtomicInteger atomicInt = new AtomicInteger(0);
+		
+		
+		final int numberOfThread = 4;
+		
+		ExecutorService taskExecutor = Executors.newFixedThreadPool(numberOfThread);
+		for(int i =0; i<numberOfThread; i++) {
+			taskExecutor.execute(new Runnable() {
+	
+				@Override
+				public void run() {
+					log.info("Start executable thread : {}", Thread.currentThread().getId());
+					
+					long timeUsed = (long)runHistory.getTotalRunCost() - initialTime;
+					
+					while(timeUsed <= timeLimit && atomicInt.get() < challengers.size()) {
+					
+						log.info("Processing evaluation thread : {}, {} ",Thread.currentThread().getId(), atomicInt.get());
+						ParameterConfiguration challenger = challengers.get(atomicInt.getAndIncrement());
+						challenger.lock();
+						challengeIncumbent(challenger);
+					}
+				}
 				
-				log.debug("Intensification timeBound: {} (s); used: {}  (s)", timeBound, timeUsed);
-			}
-			
-			//Challenger configurations can no longer be changed 
-			ParameterConfiguration challenger = challengers.get(i);
-			challenger.lock();
-			challengeIncumbent(challenger);
+			});
 		}
+		taskExecutor.shutdown();
+		try {
+		  taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+		} catch (InterruptedException e) {
+		  e.printStackTrace();
+		}
+		
+//		ScheduledExecutorService executor = Executors.newScheduledThreadPool(4);
+////		final Future handler = executor.submit(new Cax)
+//		executor.submit(new Runnable() {
+//
+//			@Override
+//			public void run() {
+//				log.info("Start executable thread : "+Thread.currentThread().getId());
+//				ParameterConfiguration challenger = challengers.get(atomicInt.getAndIncrement());
+//				challenger.lock();
+//				challengeIncumbent(challenger);
+//			}
+//			
+//		});
+//		
+//		try {
+//			executor.awaitTermination((long)timeBound, TimeUnit.SECONDS);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+		
+		log.info("Finish waiting from running executor");
+//		for(int i=0; i < challengers.size(); i++)
+//		{
+//			double timeUsed = runHistory.getTotalRunCost() - initialTime;
+//			if( timeUsed > timeBound && i > 1)
+//			{
+//				log.debug("Out of time for intensification timeBound: {} (s); used: {}  (s)", timeBound, timeUsed );
+//				break;
+//			} else
+//			{
+//				
+//				log.debug("Intensification timeBound: {} (s); used: {}  (s)", timeBound, timeUsed);
+//			}
+//			
+//			//Challenger configurations can no longer be changed 
+//			ParameterConfiguration challenger = challengers.get(i);
+//			challenger.lock();
+//			challengeIncumbent(challenger);
+//		}
 	}
 
 	

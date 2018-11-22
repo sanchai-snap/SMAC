@@ -328,6 +328,7 @@ public class SMACExecutor {
 			return AEATKReturnValues.SUCCESS;
 		} catch(Throwable t)
 		{
+			t.printStackTrace();
 			System.out.flush();
 			System.err.flush();
 			
