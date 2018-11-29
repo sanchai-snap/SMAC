@@ -11,6 +11,7 @@
 *.toc
 *.aux
 *.tex.bak
+.classpath
 .directory
 /version/smac-version.txt
 /zip

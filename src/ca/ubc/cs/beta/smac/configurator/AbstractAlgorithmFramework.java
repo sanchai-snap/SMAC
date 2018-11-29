@@ -759,7 +759,7 @@ public class AbstractAlgorithmFramework {
 		final AtomicInteger atomicInt = new AtomicInteger(0);
 		
 		
-		final int numberOfThread = 4;
+		final int numberOfThread = (options.validationCores != null)?options.validationCores:Runtime.getRuntime().availableProcessors();
 		
 		ExecutorService taskExecutor = Executors.newFixedThreadPool(numberOfThread);
 		for(int i =0; i<numberOfThread; i++) {
@@ -775,8 +775,11 @@ public class AbstractAlgorithmFramework {
 					
 						log.info("Processing evaluation thread : {}, {} ",Thread.currentThread().getId(), atomicInt.get());
 						ParameterConfiguration challenger = challengers.get(atomicInt.getAndIncrement());
+						log.info("[AutoML] Challenger size : {}, info {} ",challenger.size(), challenger.getParameterConfigurationSpace().getParamFileName());
 						challenger.lock();
 						challengeIncumbent(challenger);
+						
+						timeUsed = (long)runHistory.getTotalRunCost() - initialTime;
 					}
 				}
 				
