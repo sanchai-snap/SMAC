@@ -770,16 +770,19 @@ public class AbstractAlgorithmFramework {
 					log.info("Start executable thread : {}", Thread.currentThread().getId());
 					
 					long timeUsed = (long)runHistory.getTotalRunCost() - initialTime;
-					
-					while(timeUsed <= timeLimit && atomicInt.get() < challengers.size()) {
-					
-						log.info("Processing evaluation thread : {}, {} ",Thread.currentThread().getId(), atomicInt.get());
-						ParameterConfiguration challenger = challengers.get(atomicInt.getAndIncrement());
-						log.info("[AutoML] Challenger size : {}, info {} ",challenger.size(), challenger.getParameterConfigurationSpace().getParamFileName());
-						challenger.lock();
-						challengeIncumbent(challenger);
+					try {
+						while(timeUsed <= timeLimit && atomicInt.get() < challengers.size()) {
 						
-						timeUsed = (long)runHistory.getTotalRunCost() - initialTime;
+							log.info("Processing evaluation thread : {}, {} ",Thread.currentThread().getId(), atomicInt.get());
+							ParameterConfiguration challenger = challengers.get(atomicInt.getAndIncrement());
+							log.info("[AutoML] Challenger size : {}, info {} ",challenger.size(), challenger.getParameterConfigurationSpace().getParamFileName());
+							challenger.lock();
+							challengeIncumbent(challenger);
+							
+							timeUsed = (long)runHistory.getTotalRunCost() - initialTime;
+						}
+					}catch(OutOfTimeException e) {
+						log.debug("OutOfTime happen and need to stop");
 					}
 				}
 				

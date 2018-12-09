@@ -329,7 +329,7 @@ public class ValidatorExecutor {
 			
 			log.info("Validation Completed Successfully");
 			
-			System.exit(AEATKReturnValues.SUCCESS);
+//			System.exit(AEATKReturnValues.SUCCESS);
 			
 		} catch(Throwable t)
 		{
@@ -374,7 +374,7 @@ public class ValidatorExecutor {
 			}
 			
 			
-			System.exit(returnValue);
+//			System.exit(returnValue);
 		}
 		/*(new Validator()).validate(testInstances, smac.getIncumbent(),options, testInstanceSeedGen, validatingTae);*/
 	}

@@ -108,7 +108,7 @@ public class SMACExecutor {
 			log.debug("Returning with value: {}",returnValue);
 		}
 		
-		System.exit(returnValue);
+//		System.exit(returnValue);
 	}
 	
 	
